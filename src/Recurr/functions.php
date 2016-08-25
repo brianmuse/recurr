@@ -2,6 +2,7 @@
 
 namespace Recurr;
 
+use InvalidArgumentException;
 use Robin\Api\Libraries\Calendar\Model\ICal\Property;
 use Robin\Api\Libraries\Calendar\Model\ICal\UnknownPropertyNameEcception;
 

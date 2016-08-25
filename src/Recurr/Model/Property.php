@@ -30,7 +30,7 @@ interface Property extends ICalSerializable
     /**
      * Returns the property value.
      *
-     * @return string
+     * @return Value
      */
     public function getValue();
 }

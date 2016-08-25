@@ -1,28 +1,18 @@
 <?php
 
-/*
- * Copyright 2013 Shaun Simmons
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- *
- * Based on rrule.js
- * Copyright 2010, Jakub Roztocil and Lars Schoning
- * https://github.com/jkbr/rrule/blob/master/LICENCE
- */
+namespace Recurr\Model\Type;
 
-namespace Recurr;
 use DateTimeImmutable;
+use InvalidArgumentException;
+use Robin\Api\Libraries\Calendar\Model\ICal\Value;
 
 /**
  * Defines a time of day.
  *
  * @see https://tools.ietf.org/html/rfc5545#section-3.3.12
  */
-final class Time
+final class Time implements Value
 {
-    const TZID = 'TZID';
-
     const FLOATING_TIME_PATTERN = 'His';
 
     const UTC_TIME_PATTERN = 'His\z';
@@ -43,11 +33,6 @@ final class Time
     private $second;
 
     /**
-     * @var string The time zone ID (TZID).
-     */
-    private $tzid;
-
-    /**
      * Whether the time is in UTC.
      *
      * If this value is false, it is said to be "floating" and are not
@@ -59,31 +44,12 @@ final class Time
      */
     private $is_utc = false;
 
-    public function __construct($hour, $minute, $second, $tzid = null)
+    public function __construct($hour, $minute, $second, $is_utc = null)
     {
-        if ('Z' === substr($time, -1, 1)) {
-            $this->is_utc = true;
-            $time = DateTimeImmutable::createFromFormat(self::UTC_TIME_PATTERN, $time);
-        } else {
-            $this->tzid = $tzid;
-            $time = DateTimeImmutable::createFromFormat(self::FLOATING_TIME_PATTERN, $time);
-        }
-
-        $this->hour = $time->format('H');
-        $this->minute = $time->format('i');
-        $this->second = $time->format('s');
-    }
-
-    public static function fromString($time)
-    {
-
-        $date = DateTimeImmutable::createFromFormat(self::DATE_PATTERN, $date);
-
-        return static(
-            $date->format('Y'),
-            $date->format('m'),
-            $date->format('d')
-        )
+        $this->hour = $hour;
+        $this->minute = $minute;
+        $this->second = $second;
+        $this->is_utc = $is_utc;
     }
 
     /**
@@ -117,16 +83,6 @@ final class Time
     }
 
     /**
-     * Gets the time zone ID (TZID).
-     *
-     * @return string
-     */
-    public function getTzid()
-    {
-        return $this->tzid;
-    }
-
-    /**
      * Gets whether the time is UTC or local time.
      *
      * If this value is false, it is said to be "floating" and are not
@@ -141,10 +97,30 @@ final class Time
         return $this->is_utc;
     }
 
-    public function __toString()
+    public function iCalSerialize()
     {
-        return (null !== $this->tzid ? self::TZID . '=' . $this->tzid . ':' : '')  // Add TZID if given
-            . $this->hour . $this->minute . $this->second // Add the formatted time
-            . ($this->is_utc ? 'Z' : ''); // Add the 'Z' if it's a UTC time.
+        return $this->hour . $this->minute . $this->second . ($this->is_utc ? 'Z' : '');
+    }
+
+    public static function iCalDeserialize($ical_string)
+    {
+        if ('Z' === substr($ical_string, -1, 1)) {
+            $is_utc = true;
+            $time = DateTimeImmutable::createFromFormat(self::UTC_TIME_PATTERN, $ical_string);
+        } else {
+            $is_utc = false;
+            $time = DateTimeImmutable::createFromFormat(self::FLOATING_TIME_PATTERN, $ical_string);
+        }
+
+        if (false === $time) {
+            throw new InvalidArgumentException('The time was malformed: ' . $ical_string);
+        }
+
+        return static(
+            $time->format('Y'),
+            $time->format('m'),
+            $time->format('d'),
+            $is_utc
+        );
     }
 }

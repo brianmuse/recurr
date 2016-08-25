@@ -14,4 +14,6 @@ namespace Robin\Api\Libraries\Calendar\Model\ICal;
 interface ICalSerializable
 {
     public function iCalSerialize();
+
+    public static function iCalDeserialize($ical_string);
 }
